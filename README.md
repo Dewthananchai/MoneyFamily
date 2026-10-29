@@ -68,7 +68,15 @@ npm run push:env -- --dry-run    # ดูแผนก่อน ไม่แต�
 ส่งค่าเข้า CLI ทาง stdin (ไม่ผ่าน argv), ไม่พิมพ์ค่า secret, ตั้ง `--sensitive` ให้ตัวแปรที่ไม่ใช่ `NEXT_PUBLIC_`
 อัตโนมัติ และ redact ค่าออกจาก output แม้กรณี error — หลังรันต้อง Redeploy เพื่อให้ค่ามีผล
 
-### 5. รัน Development Server
+### 5. ตรวจการเชื่อมต่อ LINE
+```bash
+npm run check:line
+npm run check:line -- --url https://<โดเมนจริง>
+```
+ตรวจ bot credentials, webhook URL/active, LINE webhook test (signature จริงจาก LINE), signature ที่คำนวณเอง
+และ LIFF Endpoint URL ใน console พร้อมบอกว่าจุดไหนผิด
+
+### 6. รัน Development Server
 ```bash
 npm run dev
 ```

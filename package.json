@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "check:env": "node scripts/check-env.mjs",
-    "push:env": "node scripts/push-env-vercel.mjs"
+    "push:env": "node scripts/push-env-vercel.mjs",
+    "check:line": "node scripts/check-line.mjs"
   },
   "dependencies": {
     "@line/bot-sdk": "^9.6.0",
