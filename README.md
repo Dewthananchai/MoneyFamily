@@ -79,6 +79,12 @@ signature ที่คำนวณเอง และ LIFF Endpoint URL ใน c
 
 สคริปต์จะเทียบ `LINE_CHANNEL_SECRET` กับ channel ID ของ bot โดยตรง (อ่านจาก channel access token) — ถ้ายังไม่แน่ใจ ให้แปะ secret ใหม่ในไฟล์ `.line-secret-candidate` (ถูก gitignore) แล้วรัน `npm run check:line` ก่อน พอขึ้น MATCH ค่อยรัน `npm run check:line -- --apply` เพื่อเขียนลง `.env.local`
 
+หรือให้ทำให้ครบทั้งชุดอัตโนมัติ (ตรวจ → เขียน `.env.local` → อัปเดต Vercel → redeploy → ตรวจซ้ำ):
+```bash
+npm run line:apply          # เฝ้าไฟล์ .line-secret-candidate 10 นาที
+```
+ถ้า secret ไม่ตรงกับ channel ของ bot สคริปต์จะไม่แก้อะไรเลย — log อยู่ที่ `.line-apply.log`
+
 ### 6. รัน Development Server
 ```bash
 npm run dev
