@@ -6,12 +6,26 @@ import { SummaryCards } from "@/features/dashboard/summary-cards";
 import { ExpenseChart, MonthlyChartData } from "@/features/dashboard/expense-chart";
 import { TransactionTable, TransactionItem } from "@/features/dashboard/transaction-table";
 import { supabase } from "@/lib/supabase/client";
+import { LiffOnboarding, type OnboardingGroup } from "@/features/liff/onboarding";
 import { LogIn, Plus, Users, RefreshCw, ExternalLink, ShieldAlert, X } from "lucide-react";
 
 export default function DashboardPage() {
-  const { profile, isLoggedIn, isReady, isInClient, error: liffError, liffEntryUrl, login, closeWindow } =
-    useLiff();
+  const {
+    profile,
+    isLoggedIn,
+    isReady,
+    isInClient,
+    idToken,
+    error: liffError,
+    liffEntryUrl,
+    login,
+    closeWindow,
+  } = useLiff();
   const [isErrorDismissed, setIsErrorDismissed] = useState(false);
+  const [group, setGroup] = useState<OnboardingGroup | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<
+    "idle" | "loading" | "ready" | "needs-group" | "error"
+  >("idle");
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [chartData, setChartData] = useState<MonthlyChartData[]>([]);
   const [incomeTotal, setIncomeTotal] = useState(0);
@@ -133,6 +147,73 @@ export default function DashboardPage() {
     loadDashboardData();
   }, [profile]);
 
+  // ตรวจว่าผู้ใช้ LINE คนนี้ลงทะเบียนและมีครอบครัวแล้วหรือยัง
+  useEffect(() => {
+    if (!idToken) {
+      setSessionStatus("ready");
+      return;
+    }
+
+    let cancelled = false;
+    setSessionStatus("loading");
+
+    (async () => {
+      try {
+        const res = await fetch("/api/liff/session", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ idToken }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+
+        if (!res.ok) {
+          setSessionStatus("error");
+          return;
+        }
+
+        if (data.group) {
+          setGroup(data.group as OnboardingGroup);
+          setSessionStatus("ready");
+        } else {
+          setSessionStatus("needs-group");
+        }
+      } catch (err) {
+        console.error("❌ Failed to load LIFF session:", err);
+        if (!cancelled) setSessionStatus("error");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [idToken]);
+
+  if (sessionStatus === "loading") {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3 text-navy-900">
+          <div className="w-10 h-10 rounded-full border-2 border-brand-amber border-t-transparent animate-spin" />
+          <p className="text-xs font-medium text-slate-600">กำลังเชื่อมต่อบัญชี LINE…</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (sessionStatus === "needs-group" && idToken) {
+    return (
+      <LiffOnboarding
+        idToken={idToken}
+        displayName={profile?.displayName || "สมาชิก"}
+        onReady={(created) => {
+          setGroup(created);
+          setSessionStatus("ready");
+          loadDashboardData();
+        }}
+      />
+    );
+  }
+
   return (
     <main className="min-h-screen pb-20 md:pb-12 bg-slate-50">
       {/* 1. Header (Deep Navy Bar with Amber Accents) */}
@@ -251,8 +332,14 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 p-4 rounded-2xl">
           <div>
             <h2 className="text-sm md:text-base font-bold text-navy-900">
-              สวัสดีครับ 👋 {profile?.displayName || "ครอบครัว MoneyFamily"}
+              สวัสดีครับ 👋 {group?.name || profile?.displayName || "ครอบครัว MoneyFamily"}
             </h2>
+            {group?.inviteCode && (
+              <p className="text-[11px] text-slate-600 mt-1">
+                รหัสเชิญครอบครัว:{" "}
+                <span className="font-black tracking-[0.2em] text-navy-900">{group.inviteCode}</span>
+              </p>
+            )}
             <p className="text-xs text-slate-600 mt-0.5">
               พิมพ์บอกบอทหรือส่งสลิปในห้องแชท LINE ระบบจะบันทึกและซิงค์มาที่นี่อัตโนมัติ
             </p>
