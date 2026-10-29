@@ -9,7 +9,7 @@
  *       signature ที่เราคำนวณเอง, LIFF URL ปลายทาง — ไม่พิมพ์ค่า secret ออกมา
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { createHmac } from "node:crypto";
 import { parseEnvFile } from "./lib/env-file.mjs";
 
@@ -24,7 +24,10 @@ function argValue(name, fallback) {
 
 const env = parseEnvFile(readFileSync(".env.local", "utf8"));
 const token = env.get("LINE_CHANNEL_ACCESS_TOKEN") || "";
-const secret = env.get("LINE_CHANNEL_SECRET") || "";
+// ถ้ามีไฟล์ทดลอง secret ให้ใช้ค่านั้นก่อน เพื่อตรวจได้โดยยังไม่ต้องแก้ .env.local
+const candidateFile = ".line-secret-candidate";
+const candidate = existsSync(candidateFile) ? readFileSync(candidateFile, "utf8").trim() : "";
+const secret = candidate || env.get("LINE_CHANNEL_SECRET") || "";
 const liffId = env.get("NEXT_PUBLIC_LIFF_ID") || "";
 const appUrl = argValue("url", env.get("NEXT_PUBLIC_APP_URL") || "").replace(/\/+$/, "");
 
@@ -46,6 +49,52 @@ async function botInfo() {
   }
   const b = await res.json();
   console.log(`${icon(true)} bot: ${b.displayName} (${b.basicId})`);
+}
+
+async function secretChannelCheck() {
+  if (!secret) {
+    failed++;
+    console.log("❌ ไม่พบ LINE_CHANNEL_SECRET");
+    return;
+  }
+  // channel ID ของ Messaging API (bot) อ่านได้จาก channel access token
+  const verify = await fetch("https://api.line.me/v2/oauth/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ access_token: token }),
+  });
+  const botChannelId = verify.ok ? (await verify.json()).client_id : "";
+  if (!botChannelId) {
+    failed++;
+    console.log(`${icon(false)} อ่าน channel ID ของ bot ไม่ได้ (${verify.status})`);
+    return;
+  }
+
+  const res = await fetch("https://api.line.me/v2/oauth/accessToken", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: botChannelId,
+      client_secret: secret,
+    }),
+  });
+  const ok = res.ok;
+  if (!ok) failed++;
+  const label = candidate ? `secret ใน ${candidateFile}` : "LINE_CHANNEL_SECRET";
+  console.log(`${icon(ok)} ${label} เป็นของ Messaging API channel ${botChannelId}: ${ok ? "MATCH" : "ไม่ตรง"}`);
+  if (!ok) {
+    console.log(`   → เปิด https://developers.line.biz/console/channel/${botChannelId}/basics แล้วคัดลอก Channel secret`);
+    console.log(`   → แปะในไฟล์ ${candidateFile} แล้วรัน npm run check:line อีกครั้ง (ใส่ --apply เพื่อเขียนลง .env.local เมื่อตรง)`);
+  } else if (candidate && argv.includes("--apply")) {
+    const file = ".env.local";
+    const text = readFileSync(file, "utf8");
+    const next = /^LINE_CHANNEL_SECRET=.*$/m.test(text)
+      ? text.replace(/^LINE_CHANNEL_SECRET=.*$/m, `LINE_CHANNEL_SECRET=${candidate}`)
+      : `${text.replace(/\s*$/, "")}\nLINE_CHANNEL_SECRET=${candidate}\n`;
+    writeFileSync(file, next);
+    console.log(`   → เขียน ${candidateFile} ลง .env.local แล้ว (ไม่มีค่า secret พิมพ์ออกมา)`);
+  }
 }
 
 async function webhookConfig() {
@@ -73,7 +122,7 @@ async function lineWebhookTest() {
       ok ? "" : ` statusCode=${result.statusCode} reason=${result.reason}`
     }`
   );
-  if (!ok) console.log("   → signature จาก LINE ไม่ผ่าน: LINE_CHANNEL_SECRET ไม่ตรงกับ channel");
+  if (!ok) console.log("   → signature จาก LINE ไม่ผ่าน: ดูผลตรวจ secret ด้านบนว่าตรงกับ channel ของ bot ไหม");
 }
 
 async function selfSignature() {
@@ -127,6 +176,7 @@ async function liffEndpoint() {
 
 console.log(`\n🔍 ตรวจ LINE integration (${appUrl})\n`);
 await botInfo();
+await secretChannelCheck();
 await webhookConfig();
 await lineWebhookTest();
 await selfSignature();

@@ -76,6 +76,8 @@ npm run check:line -- --url https://<โดเมนจริง>
 ตรวจ bot credentials, webhook URL/active, LINE webhook test (signature จริงจาก LINE), signature ที่คำนวณเอง
 และ LIFF Endpoint URL ใน console พร้อมบอกว่าจุดไหนผิด
 
+สคริปต์จะเทียบ `LINE_CHANNEL_SECRET` กับ channel ID ของ bot โดยตรง (อ่านจาก channel access token) — ถ้ายังไม่แน่ใจ ให้แปะ secret ใหม่ในไฟล์ `.line-secret-candidate` (ถูก gitignore) แล้วรัน `npm run check:line` ก่อน พอขึ้น MATCH ค่อยรัน `npm run check:line -- --apply` เพื่อเขียนลง `.env.local`
+
 ### 6. รัน Development Server
 ```bash
 npm run dev
