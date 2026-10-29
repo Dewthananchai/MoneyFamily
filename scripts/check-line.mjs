@@ -49,6 +49,20 @@ async function botInfo() {
   }
   const b = await res.json();
   console.log(`${icon(true)} bot: ${b.displayName} (${b.basicId})`);
+  // chatMode=chat แปลว่าข้อความวิ่งเข้าแชทใน OA Manager แทน webhook → บอทจะไม่ตอบ
+  const botMode = b.chatMode === "bot";
+  if (!botMode) failed++;
+  console.log(`${icon(botMode)} chatMode: ${b.chatMode} (ต้องเป็น bot)`);
+  if (!botMode) {
+    console.log("   → เปิด https://manager.line.biz → การตั้งค่า → การตอบกลับ → เลือกโหมด \"บอท\"");
+  }
+}
+
+function autoReplySettings() {
+  // LINE Messaging API ไม่มี endpoint อ่านค่าข้อความตอบกลับอัตโนมัติของ OA Manager
+  // จึงตรวจได้แค่ฝั่งเรา: เตือนให้ไปปิดเอง (ไม่นับเป็น failure)
+  console.log("ℹ️  ข้อความตอบกลับอัตโนมัติ: ตรวจผ่าน API ไม่ได้ — ปิดเองที่ https://manager.line.biz → การตั้งค่า → การตอบกลับ");
+  console.log("   ถ้าผู้ใช้ได้รับ \"บัญชีนี้ไม่สามารถตอบข้อความใด ๆ ได้\" แปลว่า auto-reply ยังเปิดอยู่");
 }
 
 async function secretChannelCheck() {
@@ -176,6 +190,7 @@ async function liffEndpoint() {
 
 console.log(`\n🔍 ตรวจ LINE integration (${appUrl})\n`);
 await botInfo();
+await autoReplySettings();
 await secretChannelCheck();
 await webhookConfig();
 await lineWebhookTest();
