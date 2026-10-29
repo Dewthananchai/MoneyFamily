@@ -40,7 +40,8 @@ export async function createPromptPayQrBuffer(
  * สร้าง URL สำหรับแสดง QR Code ของระบบ (เรียกผ่าน API Route ของแอป)
  */
 export function getPromptPayQrUrl(target: string, amount: number, baseUrl?: string): string {
-  const host = baseUrl || process.env.NEXT_PUBLIC_APP_URL || "https://moneyfamily.vercel.app";
+  // ห้าม hardcode โดเมน: ใช้ค่าที่ส่งมา หรือ NEXT_PUBLIC_APP_URL เท่านั้น
+  const host = (baseUrl || process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
   const cleanTarget = target.replace(/[^0-9]/g, "");
   return `${host}/api/qr/promptpay?target=${encodeURIComponent(cleanTarget)}&amount=${amount}`;
 }

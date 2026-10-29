@@ -82,7 +82,7 @@ npm run dev
 
 - **LIFF ID:** `2012284598-NotCayv0`
 - **ลิงก์เปิดแอป:** https://liff.line.me/2012284598-NotCayv0
-- **Endpoint URL:** `NEXT_PUBLIC_APP_URL` ของคุณ (ต้องเป็น **https** และตรงกับโดเมนที่ deploy เช่น `https://moneyfamily.vercel.app`)
+- **Endpoint URL:** `NEXT_PUBLIC_APP_URL` ของคุณ (ต้องเป็น **https** และตรงกับโดเมนที่ deploy เช่น `https://<ชื่อโปรเจกต์>.vercel.app`)
 
 ### ค่าที่ต้องตั้งใน LINE Developers Console → LIFF
 
