@@ -49,8 +49,64 @@ npm install
 cp .env.example .env.local
 ```
 
-### 3. รัน Development Server
+### 3. ตรวจ Environment Variables
+```bash
+npm run check:env                       # ตรวจ .env.local
+npm run check:env -- .env.production    # ตรวจไฟล์อื่น
+```
+ตรวจความครบ, รูปแบบคีย์ (Supabase publishable/secret, LINE, LIFF, OpenAI), การสลับคีย์ผิดตำแหน่ง
+และความสอดคล้องของ `NEXT_PUBLIC_APP_URL` กับ LIFF — **ไม่พิมพ์ค่า secret ออกมา** และ exit code 1 เมื่อไม่พร้อม deploy
+
+### 4. ดัน Environment Variables ขึ้น Vercel
+```bash
+vercel login && vercel link      # ทำครั้งแรก
+npm run push:env                 # production + preview
+npm run push:env -- --targets production
+npm run push:env -- --only OPENAI_API_KEY,CRON_SECRET
+npm run push:env -- --dry-run    # ดูแผนก่อน ไม่แตะ Vercel
+```
+ส่งค่าเข้า CLI ทาง stdin (ไม่ผ่าน argv), ไม่พิมพ์ค่า secret, ตั้ง `--sensitive` ให้ตัวแปรที่ไม่ใช่ `NEXT_PUBLIC_`
+อัตโนมัติ และ redact ค่าออกจาก output แม้กรณี error — หลังรันต้อง Redeploy เพื่อให้ค่ามีผล
+
+### 5. รัน Development Server
 ```bash
 npm run dev
 ```
 เปิด [http://localhost:3000](http://localhost:3000) บนเบราว์เซอร์
+
+---
+
+## 📱 ตั้งค่า LINE LIFF
+
+แอปนี้ใช้ LIFF เป็นทางเข้า Dashboard และเป็นปลายทางของลิงก์ลงทะเบียนที่ LINE Bot ส่งให้ผู้ใช้ใหม่
+
+- **LIFF ID:** `2012284598-NotCayv0`
+- **ลิงก์เปิดแอป:** https://liff.line.me/2012284598-NotCayv0
+- **Endpoint URL:** `NEXT_PUBLIC_APP_URL` ของคุณ (ต้องเป็น **https** และตรงกับโดเมนที่ deploy เช่น `https://moneyfamily.vercel.app`)
+
+### ค่าที่ต้องตั้งใน LINE Developers Console → LIFF
+
+| หัวข้อ | ค่า |
+| --- | --- |
+| Endpoint URL | `https://<โดเมนที่ deploy จริง>` (ไม่มี `/` ต่อท้าย) |
+| Size | `Full` (หน้าจอเต็มสำหรับ Dashboard) |
+| Scope | `profile`, `openid` (เพิ่ม `chat_message.write` เฉพาะกรณีต้องส่งข้อความจาก LIFF) |
+| Scan QR | `On-demand` |
+| Module mode | ปิด |
+
+### Environment Variables ที่เกี่ยวข้อง
+
+```bash
+NEXT_PUBLIC_LIFF_ID=2012284598-NotCayv0
+NEXT_PUBLIC_APP_URL=https://<โดเมนที่ deploy จริง>
+```
+
+> ⚠️ LIFF ต้องเปิดผ่าน **https** เท่านั้น จึงทดสอบ login จริงบน `localhost` ไม่ได้ (หน้าเว็บจะแสดงสถานะไม่พร้อมใช้งาน)
+> ให้ deploy ขึ้น Vercel แล้วตั้ง Endpoint URL ให้ตรงกับโดเมนนั้นก่อนทดสอบ
+
+### พฤติกรรมการทำงาน
+
+1. เปิดจากแชท LINE (`liff.line.me/...`) → ระบบ auto-login ด้วยบัญชี LINE ที่เปิดอยู่ และดึงโปรไฟล์มาแสดง
+2. เปิดในเบราว์เซอร์ปกติ → แสดงปุ่ม “เข้าสู่ระบบด้วย LINE” / “เปิดใน LINE”
+3. ถ้า Endpoint URL หรือ LIFF ID ไม่ถูกต้อง → แสดงแบนเนอร์แจ้งข้อผิดพลาดพร้อมวิธีแก้
+4. ปุ่มปิดหน้าต่าง (X) จะแสดงเฉพาะเมื่อเปิดอยู่ใน LINE เพื่อกลับไปที่แชท

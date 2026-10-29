@@ -6,10 +6,12 @@ import { SummaryCards } from "@/features/dashboard/summary-cards";
 import { ExpenseChart, MonthlyChartData } from "@/features/dashboard/expense-chart";
 import { TransactionTable, TransactionItem } from "@/features/dashboard/transaction-table";
 import { supabase } from "@/lib/supabase/client";
-import { LogIn, Plus, Users, Bell, RefreshCw } from "lucide-react";
+import { LogIn, Plus, Users, RefreshCw, ExternalLink, ShieldAlert, X } from "lucide-react";
 
 export default function DashboardPage() {
-  const { profile, isLoggedIn, isReady, login } = useLiff();
+  const { profile, isLoggedIn, isReady, isInClient, error: liffError, liffEntryUrl, login, closeWindow } =
+    useLiff();
+  const [isErrorDismissed, setIsErrorDismissed] = useState(false);
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [chartData, setChartData] = useState<MonthlyChartData[]>([]);
   const [incomeTotal, setIncomeTotal] = useState(0);
@@ -187,12 +189,64 @@ export default function DashboardPage() {
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
             </button>
+
+            {/* เปิดผ่าน LINE: ปิดหน้าต่างกลับไปที่แชท */}
+            {isInClient && (
+              <button
+                onClick={closeWindow}
+                title="ปิดหน้าต่าง"
+                className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-navy-700 text-navy-200 flex items-center justify-center transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       {/* 2. Main Content Container */}
       <div className="max-w-5xl mx-auto px-4 py-4 md:py-6 space-y-4 md:space-y-6">
+        {/* LIFF Error / ยังไม่ได้เชื่อมต่อ LINE */}
+        {liffError && !isErrorDismissed && (
+          <div className="flex items-start gap-3 bg-rose-50 border border-rose-200 text-rose-900 p-3.5 rounded-2xl">
+            <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
+            <div className="text-xs leading-relaxed flex-1">
+              <p className="font-bold mb-0.5">เชื่อมต่อ LINE LIFF ไม่สำเร็จ</p>
+              <p className="text-rose-700 break-words">{liffError}</p>
+              {liffEntryUrl && (
+                <a
+                  href={liffEntryUrl}
+                  className="inline-flex items-center gap-1 mt-2 font-bold text-rose-800 underline"
+                >
+                  เปิดใหม่ผ่าน LINE <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+            <button
+              onClick={() => setIsErrorDismissed(true)}
+              aria-label="ปิดข้อความแจ้งเตือน"
+              className="w-6 h-6 rounded-md hover:bg-rose-100 flex items-center justify-center shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* เปิดนอก LINE และยังไม่ login */}
+        {isReady && !liffError && !isLoggedIn && !isInClient && liffEntryUrl && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-navy-900 text-white p-3.5 rounded-2xl">
+            <p className="text-xs text-navy-100">
+              เปิดแอปผ่าน LINE เพื่อเข้าสู่ระบบอัตโนมัติด้วยบัญชี LINE ของคุณ
+            </p>
+            <a
+              href={liffEntryUrl}
+              className="inline-flex items-center justify-center gap-1.5 bg-[#06C755] hover:bg-[#05b34c] text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors"
+            >
+              เปิดใน LINE <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        )}
+
         {/* Banner ยินดีต้อนรับ */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 p-4 rounded-2xl">
           <div>

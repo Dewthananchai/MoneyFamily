@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     // สร้าง PNG QR Code Buffer
     const qrBuffer = await createPromptPayQrBuffer(target, amount);
 
-    return new Response(qrBuffer, {
+    return new Response(new Uint8Array(qrBuffer), {
       status: 200,
       headers: {
         "Content-Type": "image/png",

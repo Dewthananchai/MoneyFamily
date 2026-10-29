@@ -27,6 +27,7 @@ import {
 import { createDebtSummaryFlexMessage } from "@/lib/line/debt-summary-flex";
 import { parseRecurringFromText } from "@/lib/openai/parse-recurring";
 import { createRecurringTransaction } from "@/lib/supabase/recurring";
+import { LIFF_ENTRY_URL, APP_URL } from "@/lib/liff/config";
 
 const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || "";
 
@@ -46,8 +47,8 @@ async function processEventsInBackground(events: WebhookEvent[]) {
       const context = await getUserAndDefaultGroup(lineUserId);
 
       if (!context) {
-        const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
-        const registerUrl = liffId ? `https://liff.line.me/${liffId}` : "#";
+        // ลิงก์เปิดแอป LIFF (https://liff.line.me/<liffId>) ให้ผู้ใช้ลงทะเบียน/เข้ากลุ่ม
+        const registerUrl = LIFF_ENTRY_URL || APP_URL || "#";
 
         await lineClient.pushMessage({
           to: lineUserId,
