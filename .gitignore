@@ -39,3 +39,5 @@ next-env.d.ts
 
 # log ของ scripts/apply-line-secret.mjs
 .line-apply.log
+.line-apply-run.log
+.line-apply.pid
