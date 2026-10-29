@@ -1,0 +1,2 @@
+# ห้ามอัปโหลดไฟล์ env ขึ้น deployment
+.env*

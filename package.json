@@ -12,18 +12,18 @@
   },
   "dependencies": {
     "@line/bot-sdk": "^9.6.0",
+    "@line/liff": "^2.24.0",
     "@supabase/supabase-js": "^2.48.1",
     "@vercel/functions": "^1.6.0",
-    "next": "15.1.6",
-    "@line/liff": "^2.24.0",
+    "clsx": "^2.1.1",
     "lucide-react": "^0.475.0",
+    "next": "^15.5.28",
     "openai": "^4.83.0",
     "promptpay-qr": "^0.5.0",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.1",
-    "clsx": "^2.1.1",
     "tailwind-merge": "^3.0.1",
     "zod": "^3.24.1"
   },
@@ -38,4 +38,3 @@
     "typescript": "^5"
   }
 }
-

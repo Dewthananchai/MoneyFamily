@@ -55,7 +55,15 @@ if (badTargets.length) {
 }
 
 const env = parseEnvFile(readFileSync(path, "utf8"));
-let entries = [...env.entries()].filter(([, v]) => v !== "");
+
+// `vercel link` จะเพิ่ม token ชั่วคราวของ CLI ลงไฟล์เอง — ห้ามดันกลับขึ้นเป็น env ของโปรเจกต์
+const cliInjected = [...env.keys()].filter((k) => k.startsWith("VERCEL_"));
+let entries = [...env.entries()].filter(
+  ([k, v]) => v !== "" && !k.startsWith("VERCEL_")
+);
+if (cliInjected.length) {
+  console.log(`ℹ️  ข้ามตัวแปรที่ Vercel CLI ใส่เอง: ${cliInjected.join(", ")}`);
+}
 if (only.length) entries = entries.filter(([k]) => only.includes(k));
 
 const missingFromFile = only.filter((k) => !env.has(k));
